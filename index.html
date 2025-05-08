@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shadowstrap</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center">
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const Shadowstrap = () => {
+      // Initialize state from localStorage
+      const [statusLog, setStatusLog] = useState(() => JSON.parse(localStorage.getItem('statusLog')) || []);
+      const [mods, setMods] = useState(() => JSON.parse(localStorage.getItem('mods')) || {
+        fpsUnlocker: false,
+        customUI: false,
+        darkMode: false
+      });
+      const [settings, setSettings] = useState(() => JSON.parse(localStorage.getItem('settings')) || {
+        graphics: 'medium',
+        fpsCap: '60',
+        windowMode: 'windowed'
+      });
+
+      // Persist state to localStorage
+      useEffect(() => {
+        localStorage.setItem('statusLog', JSON.stringify(statusLog));
+        localStorage.setItem('mods', JSON.stringify(mods));
+        localStorage.setItem('settings', JSON.stringify(settings));
+      }, [statusLog, mods, settings]);
+
+      const addStatus = (message) => {
+        setStatusLog((prev) => [...prev, `[${new Date().toLocaleTimeString()}] ${message}`].slice(-5));
+      };
+
+      const launchRoblox = () => {
+        addStatus('Attempting to launch Roblox...');
+        try {
+          // Attempt to launch Roblox via protocol
+          window.location.href = 'roblox-player://launch';
+          setTimeout(() => {
+            addStatus('Roblox launched! (If not, ensure Roblox is installed.)');
+          }, 1000);
+        } catch (error) {
+          addStatus('Error: Failed to launch Roblox. Is Roblox installed?');
+        }
+      };
+
+      const toggleMod = (modName) => {
+        setMods((prev) => {
+          const newMods = { ...prev, [modName]: !prev[modName] };
+          addStatus(`Mod ${modName} ${newMods[modName] ? 'enabled' : 'disabled'} (UI only; mod application requires native tools)`);
+          return newMods;
+        });
+      };
+
+      const updateSetting = (key, value) => {
+        setSettings((prev) => {
+          const newSettings = { ...prev, [key]: value };
+          addStatus(`Set ${key} to ${value} (saved persistently)`);
+          return newSettings;
+        });
+      };
+
+      return (
+        <div className="container mx-auto p-6 max-w-2xl bg-gray-800 rounded-lg shadow-lg">
+          <h1 className="text-4xl font-bold mb-6 text-center animate-pulse">Shadowstrap</h1>
+          
+          {/* Launch Button */}
+          <div className="mb-6">
+            <button
+              onClick={launchRoblox}
+              className="w-full bg-blue-600 hover:bg-blue-800 text-white font-bold py-3 px-4 rounded transition duration-300"
+            >
+              Launch Roblox
+            </button>
+          </div>
+
+          {/* Mod Management */}
+          <div className="mb-6">
+            <h2 className="text-2xl font-semibold mb-3">Mods</h2>
+            <p className="text-sm text-gray-400 mb-2">Note: Mods are UI-only; real mod application requires native tools.</p>
+            {Object.keys(mods).map((mod) => (
+              <label key={mod} className="flex items-center mb-2">
+                <input
+                  type="checkbox"
+                  checked={mods[mod]}
+                  onChange={() => toggleMod(mod)}
+                  className="form-checkbox h-5 w-5 text-blue-600"
+                />
+                <span className="ml-2 capitalize">{mod.replace(/([A-Z])/g, ' $1').trim()}</span>
+              </label>
+            ))}
+          </div>
+
+          {/* Settings */}
+          <div className="mb-6">
+            <h2 className="text-2xl font-semibold mb-3">Settings</h2>
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="block mb-1">Graphics Quality</label>
+                <select
+                  value={settings.graphics}
+                  onChange={(e) => updateSetting('graphics', e.target.value)}
+                  className="w-full bg-gray-700 text-white p-2 rounded"
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+              <div>
+                <label className="block mb-1">FPS Cap</label>
+                <select
+                  value={settings.fpsCap}
+                  onChange={(e) => updateSetting('fpsCap', e.target.value)}
+                  className="w-full bg-gray-700 text-white p-2 rounded"
+                >
+                  <option value="30">30 FPS</option>
+                  <option value="60">60 FPS</option>
+                  <option value="120">120 FPS</option>
+                  <option value="unlimited">Unlimited</option>
+                </select>
+              </div>
+              <div>
+                <label className="block mb-1">Window Mode</label>
+                <select
+                  value={settings.windowMode}
+                  onChange={(e) => updateSetting('windowMode', e.target.value)}
+                  className="w-full bg-gray-700 text-white p-2 rounded"
+                >
+                  <option value="windowed">Windowed</option>
+                  <option value="fullscreen">Fullscreen</option>
+                  <option value="borderless">Borderless</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Status Log */}
+          <div>
+            <h2 className="text-2xl font-semibold mb-3">Status Log</h2>
+            <div className="bg-gray-700 p-4 rounded max-h-40 overflow-y-auto">
+              {statusLog.length === 0 ? (
+                <p className="text-gray-400">No actions yet.</p>
+              ) : (
+                statusLog.map((log, index) => (
+                  <p key={index} className="text-sm">{log}</p>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    ReactDOM.render(<Shadowstrap />, document.getElementById('root'));
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+</body>
+</html>
